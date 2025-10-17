@@ -8,6 +8,7 @@ from parameters import IMG_EXTENSIONS
 from datetime import datetime
 import json
 from utils import get_exif_info
+import uuid
 
 
 assert len(sys.argv) > 1
@@ -61,7 +62,7 @@ def get_min_max_dates(points: list[dict]) -> tuple[datetime, datetime] :
 # region WIDGETS
 
 @st.fragment
-def render_map(filtered_points) :
+def render_map(filtered_points: list[dict]) :
 
     if len(filtered_points) == 0 :
         return
@@ -80,7 +81,7 @@ def render_map(filtered_points) :
             color="blue",
             fill=True,
             fill_opacity=0.6,
-            popup=f"{p['nom']}<br>{p['date']}"
+            popup=f"{p['nom']}"
         ).add_to(m)
 
     # Add Draw plugin
@@ -89,26 +90,42 @@ def render_map(filtered_points) :
         filename="data.geojson",
         position="topleft",
         draw_options={
-            "polyline": True,
             "polygon": True,
             "circle": True,
             "rectangle": True,
-            "marker": True,
-            "circlemarker": True,
+            "circlemarker": False,
+            "polyline": False,
+            "marker": False
         },
         edit_options={"edit": True}
     ).add_to(m)
 
-    # Display map
-    st_folium(m, width=1400, height=500, returned_objects=[])
+    return m
+
+
+@st.dialog(f"Nom du groupe pour la forme")
+def ask_group_name(idx: int) -> str:
+
+    name = st.text_input("Entrez le nom du groupe", key=f"input_{idx}")
+    if st.button("Valider", key=f"btn_{idx}") :
+        if name.strip() :
+            return name.strip()
 
 # endregion
 
 
 # region MAIN
 
+
+# region |---| Init
+
 st.title("📸 Carte interactive des photos")
 st.set_page_config(layout="wide")
+
+if "groups_dict" not in st.session_state:
+    st.session_state.groups_dict = {}  # id_feature -> nom
+
+# endregion
 
 points = load_photos(photos_path)
 
@@ -124,6 +141,19 @@ filtered_points = filter_points(
     end_date=end_date
 )
 
-render_map(filtered_points)
+map = render_map(filtered_points)
+drawn_groups = st_folium(map, width=1400, height=500, returned_objects=["all_drawings"])
+
+
+if drawn_groups and drawn_groups.get("all_drawings"):
+
+    for feature in drawn_groups["all_drawings"] :
+        if "uuid" not in feature:
+            feature["uuid"] = str(uuid.uuid4())
+        
+        fid = feature["uuid"]
+        if fid not in st.session_state.groups_dict :
+            group_name = ask_group_name(fid)
+            st.session_state.groups_dict[fid] = group_name
 
 # endregion
