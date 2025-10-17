@@ -14,6 +14,7 @@ from utils import (
     get_lat_lon,
     get_photo_date,
     haversine,
+    is_in_polygon,
 )
 
 
@@ -31,13 +32,20 @@ def photo_is_in_group(
         
         return debut <= photo_date <= fin if photo_date else False
 
-    elif group["type"] == "lieu":
+    elif group["type"] == "circle":
         if not photo_coords:
             return False
         lat, lon = photo_coords
         dist = haversine(lat, lon, group["latitude"], group["longitude"])
         
         return dist <= group["rayon_km"]
+    
+    elif group["type"] == "polygone" :
+        if not photo_coords:
+            return False
+        lat, lon = photo_coords
+
+        return is_in_polygon(lat, lon, group["coordinates"])
 
     return False
 

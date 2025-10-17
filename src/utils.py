@@ -4,6 +4,7 @@ from datetime import datetime
 from PIL import Image
 from PIL.ExifTags import TAGS, GPSTAGS
 from math import radians, sin, cos, sqrt, atan2
+from shapely.geometry import Point, Polygon
 
 
 # region METADATA
@@ -126,5 +127,17 @@ def haversine(
     a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
     
     return 2 * R * atan2(sqrt(a), sqrt(1 - a))
+
+
+def is_in_polygon(
+        lat: float,
+        lon: float,
+        polygon_points: list[list[float]],
+    ) -> bool :
+
+    poly = Polygon(g["coordinates"][0])  # coordinates est un MultiPolygon compatible
+    pt = Point(lon, lat)
+    
+    return poly.contains(pt)
 
 # endregion

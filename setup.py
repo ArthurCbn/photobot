@@ -10,7 +10,8 @@ setup(
         "exifread",
         "Pillow",
         "streamlit>=1.25",
-        "streamlit-folium>=0.11"
+        "streamlit-folium>=0.11",
+        "shapely"
     ],
     entry_points={
         "console_scripts": [

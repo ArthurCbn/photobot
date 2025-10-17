@@ -4,15 +4,32 @@ import streamlit as st
 import folium
 from folium.plugins import Draw
 from streamlit_folium import st_folium
-from parameters import IMG_EXTENSIONS
 from datetime import datetime
 import json
+import hashlib
 from utils import get_exif_info
-import uuid
+from parameters import (
+    IMG_EXTENSIONS,
+    GROUP_DATA_PATH,
+)
 
 
 assert len(sys.argv) > 1
 photos_path = Path(sys.argv[1])
+
+
+# region UTILS
+
+def feature_hash(feature: dict) -> str:
+    """
+    Crée un hash unique pour une feature GeoJSON.
+    """
+
+    # On convertit la feature en string JSON trié pour que l'ordre des clés ne change rien
+    feature_str = json.dumps(feature, sort_keys=True)
+    return hashlib.md5(feature_str.encode("utf-8")).hexdigest()
+
+# endregion
 
 
 # region LOGIC
@@ -55,6 +72,38 @@ def get_min_max_dates(points: list[dict]) -> tuple[datetime, datetime] :
     max_date = max(dates) if dates else None
 
     return min_date, max_date
+
+
+def export_groups(drawn_groups: dict) :
+
+    groups = []
+    print(st.session_state.groups_dict)
+    for feature in drawn_groups.get("all_drawings", []):
+
+        fid = feature_hash(feature)
+        geom_type = feature["geometry"]["type"]
+        coords = feature["geometry"]["coordinates"]
+        props = feature.get("properties", {})
+        nom = st.session_state.groups_dict.get(fid, f"Groupe_{fid}")
+
+        if geom_type == "Point" and "radius" in props:
+            groups.append({
+                "nom": nom,
+                "type": "circle",
+                "latitude": coords[1],
+                "longitude": coords[0],
+                "rayon_km": props["radius"]/1000
+            })
+        elif geom_type in ("Polygon", "MultiPolygon"):
+            groups.append({
+                "nom": nom,
+                "type": "polygone",
+                "coordinates": coords[0]
+            })
+    
+    with open(GROUP_DATA_PATH, "w", encoding="utf-8") as f:
+        json.dump({"groupes": groups}, f, indent=2)
+    st.success("✅ groupes.json créé !")
 
 # endregion
 
@@ -104,12 +153,13 @@ def render_map(filtered_points: list[dict]) :
 
 
 @st.dialog(f"Nom du groupe pour la forme")
-def ask_group_name(idx: int) -> str:
+def ask_group_name(idx: int) :
 
     name = st.text_input("Entrez le nom du groupe", key=f"input_{idx}")
     if st.button("Valider", key=f"btn_{idx}") :
         if name.strip() :
-            return name.strip()
+            st.session_state.groups_dict[fid] = name
+            st.success(f"✅ groupe {name.strip()} créé !")
 
 # endregion
 
@@ -148,12 +198,12 @@ drawn_groups = st_folium(map, width=1400, height=500, returned_objects=["all_dra
 if drawn_groups and drawn_groups.get("all_drawings"):
 
     for feature in drawn_groups["all_drawings"] :
-        if "uuid" not in feature:
-            feature["uuid"] = str(uuid.uuid4())
-        
-        fid = feature["uuid"]
+        fid = feature_hash(feature)
+
         if fid not in st.session_state.groups_dict :
-            group_name = ask_group_name(fid)
-            st.session_state.groups_dict[fid] = group_name
+            ask_group_name(fid)
+
+if st.button(label="Exporter les groupes") :
+    export_groups(drawn_groups=drawn_groups)
 
 # endregion
