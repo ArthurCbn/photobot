@@ -101,9 +101,16 @@ def export_groups(drawn_groups: dict) :
                 "coordinates": coords[0]
             })
     
+    existing_groups = []
+    if GROUP_DATA_PATH.exists() :
+        with open(GROUP_DATA_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            existing_groups = data.get("groups", [])
+    # TODO check les id pour les doublons
     with open(GROUP_DATA_PATH, "w", encoding="utf-8") as f:
-        json.dump({"groupes": groups}, f, indent=2)
-    st.success("✅ groupes.json créé !")
+        json.dump({"groups": existing_groups + groups}, f, indent=2)
+    
+    st.success("✅ groups.json actualisé !")
 
 # endregion
 
