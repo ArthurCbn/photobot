@@ -89,6 +89,7 @@ def export_groups(drawn_groups: dict) :
         if geom_type == "Point" and "radius" in props:
             groups.append({
                 "nom": nom,
+                "id": fid,
                 "type": "circle",
                 "latitude": coords[1],
                 "longitude": coords[0],
@@ -97,6 +98,7 @@ def export_groups(drawn_groups: dict) :
         elif geom_type in ("Polygon", "MultiPolygon"):
             groups.append({
                 "nom": nom,
+                "id": fid,
                 "type": "polygone",
                 "coordinates": coords[0]
             })
@@ -106,8 +108,10 @@ def export_groups(drawn_groups: dict) :
         with open(GROUP_DATA_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
             existing_groups = data.get("groups", [])
-    # TODO check les id pour les doublons
+            existing_ids = [g.get("id", None) for g in existing_groups]
+    
     with open(GROUP_DATA_PATH, "w", encoding="utf-8") as f:
+        new_groups = [g for g in groups if g["id"] not in existing_ids]
         json.dump({"groups": existing_groups + groups}, f, indent=2)
     
     st.success("✅ groups.json actualisé !")
