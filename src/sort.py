@@ -6,7 +6,6 @@ from datetime import datetime
 from pathlib import Path
 from parameters import (
     GROUP_DATA_PATH,
-    TO_SORT_FOLDER_NAME,
     IMG_EXTENSIONS
 )
 from utils import (
@@ -59,9 +58,6 @@ def sort_photos(
     with open(groups_data_path, "r", encoding="utf-8") as f :
         groups_data = json.load(f)["groups"]
 
-    not_sorted = output_path / TO_SORT_FOLDER_NAME
-    os.makedirs(not_sorted, exist_ok=True)
-
     for file_path in set().union(*[set(photos_path.glob(extension)) for extension in IMG_EXTENSIONS]) :
 
         filename = file_path.name
@@ -76,16 +72,23 @@ def sort_photos(
                 break
 
         if not group:
-            shutil.move(file_path, not_sorted / filename)
             continue
 
+        if date:
+            year = date.strftime("%Y")
+            year_path = output_path / year
+        else:
+            year_path = output_path / "inconnue"
+
+        os.makedirs(year_path, exist_ok=True)
+
         # Dossier cible
-        group_path = output_path / group["nom"]
+        group_path = year_path / group["nom"]
         os.makedirs(group_path, exist_ok=True)
 
         # Si groupe lieu -> sous-dossier par mois
-        if group["type"] == "lieu" and date:
-            mois = date.strftime("%Y-%m")
+        if group["type"] != "date" and date:
+            mois = date.strftime("%m")
             group_path = group_path / mois
             os.makedirs(group_path, exist_ok=True)
 
