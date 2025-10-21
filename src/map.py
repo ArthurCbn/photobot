@@ -41,6 +41,7 @@ def load_photos(photos_path: Path) -> list[dict] :
     for photo_path in set().union(*[set(photos_path.glob(ext)) for ext in IMG_EXTENSIONS]):
         filename = photo_path.name
         lat, lon, date = get_exif_info(photo_path)
+        date_str = date.strftime("%Y:%m:%d %H:%M:%S")
         if lat and lon:
             points.append({"nom": filename, "lat": lat, "lon": lon, "date": date})
     

@@ -9,9 +9,7 @@ from parameters import (
     IMG_EXTENSIONS
 )
 from utils import (
-    get_exif_data,
-    get_lat_lon,
-    get_photo_date,
+    get_exif_info,
     haversine,
     is_in_polygon,
 )
@@ -61,9 +59,8 @@ def sort_photos(
     for file_path in set().union(*[set(photos_path.glob(extension)) for extension in IMG_EXTENSIONS]) :
 
         filename = file_path.name
-        exif = get_exif_data(file_path)
-        date = get_photo_date(exif)
-        coords = get_lat_lon(exif)
+        lat, lon, date = get_exif_info(file_path)
+        coords = (lat, lon)
 
         group = None
         for g in groups_data:
