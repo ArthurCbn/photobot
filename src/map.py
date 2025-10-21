@@ -74,10 +74,12 @@ def get_min_max_dates(points: list[dict]) -> tuple[datetime, datetime] :
     return min_date, max_date
 
 
-def export_groups(drawn_groups: dict) :
+def export_groups(
+        drawn_groups: dict,
+        existing_groups: list[dict]
+) -> list[dict] :
 
     groups = []
-    print(st.session_state.groups_dict)
     for feature in drawn_groups.get("all_drawings", []):
 
         fid = feature_hash(feature)
@@ -103,18 +105,17 @@ def export_groups(drawn_groups: dict) :
                 "coordinates": coords[0]
             })
     
-    existing_groups = []
-    if GROUP_DATA_PATH.exists() :
-        with open(GROUP_DATA_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            existing_groups = data.get("groups", [])
-            existing_ids = [g.get("id", None) for g in existing_groups]
+    
+    existing_ids = [g.get("id", None) for g in existing_groups]
     
     with open(GROUP_DATA_PATH, "w", encoding="utf-8") as f:
         new_groups = [g for g in groups if g["id"] not in existing_ids]
-        json.dump({"groups": existing_groups + groups}, f, indent=2)
+        new_existing_groups = existing_groups + new_groups
+        json.dump({"groups": new_existing_groups}, f, indent=2)
     
     st.success("✅ groups.json actualisé !")
+
+    return new_existing_groups
 
 # endregion
 
@@ -122,7 +123,10 @@ def export_groups(drawn_groups: dict) :
 # region WIDGETS
 
 @st.fragment
-def render_map(filtered_points: list[dict]) :
+def render_map(
+    filtered_points: list[dict],
+    existing_groups: list[dict]
+) -> None :
 
     if len(filtered_points) == 0 :
         return
@@ -133,7 +137,36 @@ def render_map(filtered_points: list[dict]) :
     # After creating the map
     m = folium.Map(location=[avg_lat, avg_lon], zoom_start=6)
 
-    # Add points
+    # Existing groups
+    if existing_groups:
+        for g in existing_groups:
+            nom = g.get("nom", "Sans nom")
+            gtype = g.get("type", "")
+            
+            if gtype == "circle":
+                folium.Circle(
+                    location=[g["latitude"], g["longitude"]],
+                    radius=g["rayon_km"] * 1000,
+                    color="green",
+                    fill=True,
+                    fill_opacity=0.3,
+                    popup=nom
+                ).add_to(m)
+
+            elif gtype == "polygone" and "coordinates" in g:
+                coords = g["coordinates"]
+                # Folium attend [lat, lon]
+                coords_latlon = [(pt[1], pt[0]) for pt in coords]
+                folium.Polygon(
+                    locations=coords_latlon,
+                    color="green",
+                    fill=True,
+                    fill_opacity=0.3,
+                    popup=nom
+                ).add_to(m)
+
+
+    # Add photos
     for p in filtered_points:
         folium.CircleMarker(
             location=[p["lat"], p["lon"]],
@@ -146,7 +179,7 @@ def render_map(filtered_points: list[dict]) :
 
     # Add Draw plugin
     Draw(
-        export=True,  # allows exporting drawn shapes
+        export=False,
         filename="data.geojson",
         position="topleft",
         draw_options={
@@ -172,6 +205,19 @@ def ask_group_name(idx: int) :
             st.session_state.groups_dict[fid] = name
             st.success(f"✅ groupe {name.strip()} créé !")
 
+
+def groups_sidebar(existing_groups: list[dict]) -> None :
+
+    st.sidebar.title("📂 Groupes existants")
+
+    if len(existing_groups) == 0:
+        st.sidebar.info("Aucun groupe enregistré pour le moment.")
+    else:
+        for g in existing_groups:
+            nom = g.get("nom", "Sans nom")
+            type_g = g.get("type", "inconnu")
+            st.sidebar.markdown(f"**• {nom}** — _{type_g}_")
+
 # endregion
 
 
@@ -180,6 +226,17 @@ def ask_group_name(idx: int) :
 
 # region |---| Init
 
+if GROUP_DATA_PATH.exists():
+    with open(GROUP_DATA_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+        existing_groups = data.get("groups", [])
+else:
+    existing_groups = []
+
+if "existing_groups" not in st.session_state :
+    st.session_state.existing_groups = existing_groups
+
+
 st.title("📸 Carte interactive des photos")
 st.set_page_config(layout="wide")
 
@@ -187,6 +244,8 @@ if "groups_dict" not in st.session_state:
     st.session_state.groups_dict = {}  # id_feature -> nom
 
 # endregion
+
+groups_sidebar(existing_groups=st.session_state.existing_groups)
 
 points = load_photos(photos_path)
 
@@ -202,7 +261,10 @@ filtered_points = filter_points(
     end_date=end_date
 )
 
-map = render_map(filtered_points)
+map = render_map(
+    filtered_points=filtered_points,
+    existing_groups=st.session_state.existing_groups
+)
 drawn_groups = st_folium(map, width=1400, height=500, returned_objects=["all_drawings"])
 
 
@@ -215,6 +277,10 @@ if drawn_groups and drawn_groups.get("all_drawings"):
             ask_group_name(fid)
 
 if st.button(label="Exporter les groupes") :
-    export_groups(drawn_groups=drawn_groups)
+    st.session_state.existing_groups = export_groups(
+        drawn_groups=drawn_groups,
+        existing_groups=st.session_state.existing_groups
+    )
+    st.rerun()
 
 # endregion
