@@ -1,19 +1,17 @@
 import exifread
 from pathlib import Path
 from datetime import datetime
-from PIL import Image
-from PIL.ExifTags import TAGS, GPSTAGS
 from math import radians, sin, cos, sqrt, atan2
 from shapely.geometry import Point, Polygon
 
 
 # region METADATA
 
-def get_exif_info(image_path: Path) -> tuple[float|None, float|None, datetime] :
+def get_exif_info(image_path: Path) -> tuple[float|None, float|None, datetime|None] :
     with open(image_path, "rb") as f:
         tags = exifread.process_file(f, details=False)
 
-    def get_value(tag):
+    def get_value(tag, tags=tags):
         value = tags.get(tag)
         return value.values if value else None
 
@@ -22,15 +20,15 @@ def get_exif_info(image_path: Path) -> tuple[float|None, float|None, datetime] :
     lon = get_value("GPS GPSLongitude")
     lon_ref = get_value("GPS GPSLongitudeRef")
     date_taken = tags.get("EXIF DateTimeOriginal")
-    date_str = str(date_taken) if date_taken else None
-
+    date_str = str(date_taken).strip() if date_taken else None
+    
     if date_str :
         date = datetime.strptime(date_str, "%Y:%m:%d %H:%M:%S")
     else :
-        date_str = date
+        date = None
 
     if not lat or not lon:
-        return None, None, date_str
+        return None, None, date
 
     def _convert(coord):
         d, m, s = coord
