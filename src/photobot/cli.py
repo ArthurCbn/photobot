@@ -1,9 +1,9 @@
 import sys
-from sort import sort_photos
+from photobot.sort import sort_photos
 import subprocess
 import os
 from pathlib import Path
-from parameters import (
+from photobot.parameters import (
     SRC_PATH,
 )
 
@@ -39,7 +39,7 @@ def main():
             print(f"❌ Dossier {dossier_source} introuvable.")
             sys.exit(1)
 
-        subprocess.run(["streamlit", "run", f"{SRC_PATH / "map.py"}", "--", str(dossier_source)])
+        subprocess.run(["streamlit", "run", f"{SRC_PATH / "photobot" / "map.py"}", "--", str(dossier_source)])
 
     else:
         print(f"❌ Commande inconnue : {cmd}")

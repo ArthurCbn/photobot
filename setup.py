@@ -1,9 +1,9 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="photobot",
     version="1.0.0",
-    py_modules=["cli", "map", "sort", "parameters", "utils"],
+    packages=find_packages(where="src"),
     package_dir={"": "src"},
     install_requires=[
         "folium",
@@ -15,7 +15,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "photobot=cli:main"
+            "photobot=photobot.cli:main"
         ]
     },
     author="Arthur Cabon",

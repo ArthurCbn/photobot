@@ -1,7 +1,7 @@
 from pathlib import Path
 import os
 
-SRC_PATH = Path(__file__).absolute().parent
+SRC_PATH = Path(__file__).absolute().parent.parent
 REPO_PATH = SRC_PATH.parent
 DATA_PATH = REPO_PATH / "data"
 

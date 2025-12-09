@@ -4,11 +4,11 @@ import json
 import shutil
 from datetime import datetime
 from pathlib import Path
-from parameters import (
+from photobot.parameters import (
     GROUP_DATA_PATH,
     IMG_EXTENSIONS
 )
-from utils import (
+from photobot.utils import (
     get_exif_info,
     haversine,
     is_in_polygon,

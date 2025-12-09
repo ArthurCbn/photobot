@@ -7,8 +7,8 @@ from streamlit_folium import st_folium
 from datetime import datetime
 import json
 import hashlib
-from utils import get_exif_info
-from parameters import (
+from photobot.utils import get_exif_info
+from photobot.parameters import (
     IMG_EXTENSIONS,
     GROUP_DATA_PATH,
 )
