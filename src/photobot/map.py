@@ -7,9 +7,13 @@ from streamlit_folium import st_folium
 from datetime import datetime
 import json
 import hashlib
-from photobot.utils import get_exif_info
+from photobot.utils import (
+    get_jpg_metadata,
+    get_mp4_metadata
+)
 from photobot.parameters import (
     IMG_EXTENSIONS,
+    VIDEO_EXTENSIONS,
     GROUP_DATA_PATH,
 )
 
@@ -35,17 +39,22 @@ def feature_hash(feature: dict) -> str:
 # region LOGIC
 
 @st.cache_data
-def load_photos(photos_path: Path) -> list[dict] :
+def load_photos_videos(medias_path: Path) -> list[dict] :
 
     points = []
-    for photo_path in set().union(*[set(photos_path.glob(ext)) for ext in IMG_EXTENSIONS]):
-        filename = photo_path.name
-        lat, lon, date = get_exif_info(photo_path)
-        
+    for media_path in set().union(*[medias_path.glob(f"*{suffix}") for suffix in IMG_EXTENSIONS + VIDEO_EXTENSIONS]):
+        filename = media_path.name
+        suffix = media_path.suffix
+
+        if suffix in IMG_EXTENSIONS :
+            lat, lon, date = get_jpg_metadata(media_path)
+        elif suffix in VIDEO_EXTENSIONS :
+            lat, lon, date = get_mp4_metadata(media_path)
+
         if date :
             date_str = date.strftime("%Y:%m:%d %H:%M:%S")
         else :
-            date = date_str
+            date_str = date
         
         if lat and lon:
             points.append({"nom": filename, "lat": lat, "lon": lon, "date": date_str})
@@ -303,7 +312,7 @@ if "new_date_groups" not in st.session_state :
 
 groups_sidebar(existing_groups=st.session_state.existing_groups)
 
-points = load_photos(photos_path)
+points = load_photos_videos(photos_path)
 
 min_date, max_date = get_min_max_dates(points)
 

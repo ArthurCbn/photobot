@@ -10,4 +10,5 @@ if not DATA_PATH.exists() :
 
 GROUP_DATA_PATH = DATA_PATH / "groups.json"
 
-IMG_EXTENSIONS = ["*.jpg", "*.jpeg", "*.png", "*.heic"]
+IMG_EXTENSIONS = [".jpg", ".jpeg", ".png", ".heic"]
+VIDEO_EXTENSIONS = [".mp4"]

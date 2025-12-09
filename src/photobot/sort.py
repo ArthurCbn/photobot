@@ -6,10 +6,11 @@ from datetime import datetime
 from pathlib import Path
 from photobot.parameters import (
     GROUP_DATA_PATH,
-    IMG_EXTENSIONS
+    IMG_EXTENSIONS,
+    VIDEO_EXTENSIONS
 )
 from photobot.utils import (
-    get_exif_info,
+    get_jpg_metadata,
     haversine,
     is_in_polygon,
     sort_groups,
@@ -48,7 +49,7 @@ def photo_is_in_group(
 
 
 def sort_photos(
-        photos_path: Path, 
+        medias_path: Path, 
         output_path: Path,
         groups_data_path: Path=GROUP_DATA_PATH
     ) -> None :
@@ -56,10 +57,10 @@ def sort_photos(
     with open(groups_data_path, "r", encoding="utf-8") as f :
         groups_data = sort_groups(json.load(f)["groups"])
 
-    for file_path in set().union(*[set(photos_path.glob(extension)) for extension in IMG_EXTENSIONS]) :
+    for file_path in set().union(*[medias_path.glob(f"*{suffix}") for suffix in IMG_EXTENSIONS + VIDEO_EXTENSIONS]) :
 
         filename = file_path.name
-        lat, lon, date = get_exif_info(file_path)
+        lat, lon, date = get_jpg_metadata(file_path)
         coords = (lat, lon)
 
         group = None

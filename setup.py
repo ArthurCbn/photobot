@@ -11,7 +11,8 @@ setup(
         "Pillow",
         "streamlit>=1.25",
         "streamlit-folium>=0.11",
-        "shapely"
+        "shapely",
+        "PyExifTool"
     ],
     entry_points={
         "console_scripts": [

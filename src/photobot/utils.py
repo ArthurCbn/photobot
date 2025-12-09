@@ -4,11 +4,14 @@ from datetime import datetime
 from math import radians, sin, cos, sqrt, atan2, log, tan, pi
 from shapely.geometry import Point, Polygon
 from shapely.ops import transform
+import exiftool
 
 
 # region METADATA
 
-def get_exif_info(image_path: Path) -> tuple[float|None, float|None, datetime|None] :
+# region |---| JPG
+
+def get_jpg_metadata(image_path: Path) -> tuple[float|None, float|None, datetime|None] :
     with open(image_path, "rb") as f:
         tags = exifread.process_file(f, details=False)
 
@@ -44,6 +47,44 @@ def get_exif_info(image_path: Path) -> tuple[float|None, float|None, datetime|No
         lon = -lon
 
     return lat, lon, date
+
+# endregion
+
+# region |---| MP4
+
+def get_mp4_metadata(path: Path) -> tuple[float|None, float|None, datetime|None]:
+    """
+    Extrait latitude, longitude et datetime d'une vidéo en utilisant ExifTool.
+    Fonction robuste et standardisée.
+    """
+
+    with exiftool.ExifToolHelper() as et:
+        metadata = et.get_metadata(str(path))[0]
+
+    lat = metadata.get("Composite:GPSLatitude")
+    lon = metadata.get("Composite:GPSLongitude")
+    date_str = (
+        metadata.get("QuickTime:CreationDate")
+        or metadata.get("QuickTime:CreateDate")
+        or metadata.get("EXIF:DateTimeOriginal")
+        or metadata.get("QuickTime:ContentCreateDate")
+    )
+
+    # Normalisation date
+    date = None
+    if date_str:
+        try:
+            # ExifTool renvoie souvent un format : "2022:03:18 14:22:05Z"
+            date_str = date_str.replace("Z", "+00:00")
+            date = datetime.fromisoformat(
+                date_str.replace(":", "-", 2)  # convertir AAAA:MM:DD → AAAA-MM-DD
+            )
+        except Exception:
+            pass
+
+    return lat, lon, date
+
+# endregion
 
 # endregion
 
