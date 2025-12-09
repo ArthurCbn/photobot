@@ -30,19 +30,18 @@ def photo_is_in_group(
         
         return debut <= photo_date <= fin if photo_date else False
 
-    elif group["type"] == "circle":
-        if not photo_coords:
-            return False
-        lat, lon = photo_coords
+    if not photo_coords :
+        return False
+
+    lat, lon = photo_coords
+    if (lat is None) or (lon is None)  :
+        return False
+
+    if group["type"] == "circle":
         dist = haversine(lat, lon, group["latitude"], group["longitude"])
-        
         return dist <= group["rayon_km"]
     
-    elif group["type"] == "polygone" :
-        if not photo_coords:
-            return False
-        lat, lon = photo_coords
-
+    if group["type"] == "polygone" :
         return is_in_polygon(lat, lon, group["coordinates"])
 
     return False
