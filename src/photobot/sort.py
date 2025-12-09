@@ -12,6 +12,7 @@ from photobot.utils import (
     get_exif_info,
     haversine,
     is_in_polygon,
+    sort_groups,
 )
 
 
@@ -54,7 +55,7 @@ def sort_photos(
     ) -> None :
 
     with open(groups_data_path, "r", encoding="utf-8") as f :
-        groups_data = json.load(f)["groups"]
+        groups_data = sort_groups(json.load(f)["groups"])
 
     for file_path in set().union(*[set(photos_path.glob(extension)) for extension in IMG_EXTENSIONS]) :
 

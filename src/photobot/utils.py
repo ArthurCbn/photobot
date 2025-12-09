@@ -1,8 +1,9 @@
 import exifread
 from pathlib import Path
 from datetime import datetime
-from math import radians, sin, cos, sqrt, atan2
+from math import radians, sin, cos, sqrt, atan2, log, tan, pi
 from shapely.geometry import Point, Polygon
+from shapely.ops import transform
 
 
 # region METADATA
@@ -76,5 +77,63 @@ def is_in_polygon(
     pt = Point(lon, lat)
     
     return poly.contains(pt)
+
+
+def polygon_area_km2(coords: tuple[float, float]) -> float :
+
+    # Conversion lat/lon -> WebMercator (en mètres)
+    def _lonlat_to_mercator(
+            lon: float, 
+            lat: float
+    ) -> tuple[float, float] :
+
+        R = 6378137  # rayon sphère WGS84
+        x = R * radians(lon)
+        y = R * log(tan(pi/4 + radians(lat)/2))
+
+        return x, y
+
+
+    poly = Polygon([(lon, lat) for lon, lat in coords])
+
+    # reprojection vers WebMercator
+    poly_merc = transform(
+        lambda x, y: _lonlat_to_mercator(x, y),
+        poly
+    )
+
+    return poly_merc.area / 1_000_000  # m² -> km²
+
+
+def circle_area_km2(rayon_km: float) -> float :
+    return pi * rayon_km**2
+
+
+def date_duration_days(
+        date1: str,
+        date2: str
+) -> float :
+    d1 = datetime.strptime(date1, format="%Y:%m:%d %H:%M:%S")
+    d2 = datetime.strptime(date2, format="%Y:%m:%d %H:%M:%S")
+
+    return (d2 - d1).days
+
+
+def sort_groups(groups: list[dict]) -> list[dict] :
+
+    def key(g: dict) -> tuple[int, float] :
+
+        if g["type"] == "date":
+            return (0, date_duration_days(g["date_debut"], g["date_fin"]))
+        
+        if g["type"] == "polygone":
+            return (1, polygon_area_km2(g["coordinates"]))
+        
+        if g["type"] == "circle":
+            return (1, circle_area_km2(g["rayon_km"]))
+        
+        return (2, 0)
+
+    return sorted(groups, key=key)
 
 # endregion
