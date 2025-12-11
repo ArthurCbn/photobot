@@ -5,6 +5,26 @@ from math import radians, sin, cos, sqrt, atan2, log, tan, pi
 from shapely.geometry import Point, Polygon
 from shapely.ops import transform
 import exiftool
+import re
+
+
+def parse_date_from_stem(stem: str) -> datetime|None :
+    date_str = None
+    
+    pattern = r"^\d{4}-\d{2}-\d{2} \d{2}\.\d{2}\.\d{2}.*"
+    if re.match(pattern, stem) :
+        date_str = stem[:19]
+        date_str = date_str.replace(".", ":")
+        date_str = date_str.replace("-", ":")
+    
+    date = None
+    if date_str:
+        try :
+            date = datetime.strptime(date_str, "%Y:%m:%d %H:%M:%S")
+        except :
+            pass
+    
+    return date
 
 
 # region METADATA
@@ -23,13 +43,15 @@ def get_jpg_metadata(image_path: Path) -> tuple[float|None, float|None, datetime
     lat_ref = get_value("GPS GPSLatitudeRef")
     lon = get_value("GPS GPSLongitude")
     lon_ref = get_value("GPS GPSLongitudeRef")
-    date_taken = tags.get("EXIF DateTimeOriginal")
-    date_str = str(date_taken).strip() if date_taken else None
+
+    date = parse_date_from_stem(image_path.stem)
+    if date is None :
+        date_taken = tags.get("EXIF DateTimeOriginal")
+        date_str = str(date_taken).strip() if date_taken else None
     
-    if date_str :
-        date = datetime.strptime(date_str, "%Y:%m:%d %H:%M:%S")
-    else :
         date = None
+        if date_str :
+            date = datetime.strptime(date_str, "%Y:%m:%d %H:%M:%S")
 
     if not lat or not lon:
         return None, None, date
@@ -63,24 +85,26 @@ def get_mp4_metadata(path: Path) -> tuple[float|None, float|None, datetime|None]
 
     lat = metadata.get("Composite:GPSLatitude")
     lon = metadata.get("Composite:GPSLongitude")
+    
+    date = parse_date_from_stem(path.stem)
+
+    if date :
+        return lat, lon, date
+
     date_str = (
         metadata.get("QuickTime:CreationDate")
         or metadata.get("QuickTime:CreateDate")
         or metadata.get("EXIF:DateTimeOriginal")
         or metadata.get("QuickTime:ContentCreateDate")
     )
+    # ExifTool renvoie souvent un format : "2022:03:18 14:22:05Z"
+    date_str = date_str.replace("Z", "+00:00")
 
-    # Normalisation date
-    date = None
     if date_str:
-        try:
-            # ExifTool renvoie souvent un format : "2022:03:18 14:22:05Z"
-            date_str = date_str.replace("Z", "+00:00")
-            date = datetime.fromisoformat(
-                date_str.replace(":", "-", 2)  # convertir AAAA:MM:DD → AAAA-MM-DD
-            )
-        except Exception:
-            pass
+        try :
+            date = datetime.strptime(date_str, "%Y:%m:%d %H:%M:%S")
+        except : # Year 0 for instance
+            pass 
 
     return lat, lon, date
 
@@ -154,8 +178,8 @@ def date_duration_days(
         date1: str,
         date2: str
 ) -> float :
-    d1 = datetime.strptime(date1, format="%Y:%m:%d %H:%M:%S")
-    d2 = datetime.strptime(date2, format="%Y:%m:%d %H:%M:%S")
+    d1 = datetime.strptime(date1, "%Y-%m-%d")
+    d2 = datetime.strptime(date2, "%Y-%m-%d")
 
     return (d2 - d1).days
 

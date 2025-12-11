@@ -2,7 +2,10 @@ import os
 import sys
 import json
 import shutil
-from datetime import datetime
+from datetime import (
+    datetime,
+    timezone
+)
 from pathlib import Path
 from photobot.parameters import (
     GROUP_DATA_PATH,
@@ -27,10 +30,20 @@ def media_is_in_group(
     ) -> bool :
 
     if group["type"] == "date":
-        debut = datetime.fromisoformat(group["debut"])
-        fin = datetime.fromisoformat(group["fin"])
-        
-        return debut <= media_date <= fin if media_date else False
+
+        # parse toujours la date sans timezone
+        debut = datetime.strptime(group["date_debut"], "%Y-%m-%d")
+        fin = datetime.strptime(group["date_fin"], "%Y-%m-%d")
+
+        if media_date is None:
+            return False
+
+        # Si media_date est timezone-aware → rendre debut & fin timezone-aware en UTC
+        if media_date.tzinfo is not None and media_date.tzinfo.utcoffset(media_date) is not None:
+            debut = debut.replace(tzinfo=timezone.utc)
+            fin = fin.replace(tzinfo=timezone.utc)
+
+        return debut <= media_date <= fin
 
     if not media_coords :
         return False
@@ -100,7 +113,11 @@ def sort_medias(
                 os.makedirs(group_path, exist_ok=True)
 
         else :
-            group_path = year_path
+            group_path = year_path / "z_autre"
+            if date :
+                mois = date.strftime("%m")
+                group_path = group_path / mois
+            os.makedirs(group_path, exist_ok=True)
 
         shutil.move(file_path, group_path / filename)
         
