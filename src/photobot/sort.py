@@ -58,7 +58,10 @@ def sort_medias(
     with open(groups_data_path, "r", encoding="utf-8") as f :
         groups_data = sort_groups(json.load(f)["groups"])
 
-    for file_path in set().union(*[medias_path.glob(f"*{suffix}") for suffix in IMG_EXTENSIONS + VIDEO_EXTENSIONS]) :
+    all_files = set().union(*[medias_path.glob(f"*{suffix}") for suffix in IMG_EXTENSIONS + VIDEO_EXTENSIONS])
+    print(f"{len(all_files)} files to sort...")
+
+    for i, file_path in enumerate(all_files) :
 
         filename = file_path.name
         suffix = file_path.suffix
@@ -76,26 +79,30 @@ def sort_medias(
                 group = g
                 break
 
-        if not group:
-            continue
-
         if date:
             year = date.strftime("%Y")
             year_path = output_path / year
         else:
             year_path = output_path / "inconnue"
-
+ 
         os.makedirs(year_path, exist_ok=True)
 
-        # Dossier cible
-        group_path = year_path / group["nom"]
-        os.makedirs(group_path, exist_ok=True)
+        if group:
 
-        # Si groupe lieu -> sous-dossier par mois
-        if group["type"] != "date" and date:
-            mois = date.strftime("%m")
-            group_path = group_path / mois
+            # Dossier cible
+            group_path = year_path / group["nom"]
             os.makedirs(group_path, exist_ok=True)
 
+            # Si groupe lieu -> sous-dossier par mois
+            if group["type"] != "date" and date:
+                mois = date.strftime("%m")
+                group_path = group_path / mois
+                os.makedirs(group_path, exist_ok=True)
+
+        else :
+            group_path = year_path
+
         shutil.move(file_path, group_path / filename)
+        
+        print(f"Sorted : {i+1}", end="\r")
 
