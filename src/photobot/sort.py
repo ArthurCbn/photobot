@@ -11,6 +11,7 @@ from photobot.parameters import (
 )
 from photobot.utils import (
     get_jpg_metadata,
+    get_mp4_metadata,
     haversine,
     is_in_polygon,
     sort_groups,
@@ -19,9 +20,9 @@ from photobot.utils import (
 
 # region TRI
 
-def photo_is_in_group(
-        photo_date: datetime, 
-        photo_coords: tuple[float|None, float|None], 
+def media_is_in_group(
+        media_date: datetime, 
+        media_coords: tuple[float|None, float|None], 
         group: dict
     ) -> bool :
 
@@ -29,12 +30,12 @@ def photo_is_in_group(
         debut = datetime.fromisoformat(group["debut"])
         fin = datetime.fromisoformat(group["fin"])
         
-        return debut <= photo_date <= fin if photo_date else False
+        return debut <= media_date <= fin if media_date else False
 
-    if not photo_coords :
+    if not media_coords :
         return False
 
-    lat, lon = photo_coords
+    lat, lon = media_coords
     if (lat is None) or (lon is None)  :
         return False
 
@@ -48,7 +49,7 @@ def photo_is_in_group(
     return False
 
 
-def sort_photos(
+def sort_medias(
         medias_path: Path, 
         output_path: Path,
         groups_data_path: Path=GROUP_DATA_PATH
@@ -60,12 +61,18 @@ def sort_photos(
     for file_path in set().union(*[medias_path.glob(f"*{suffix}") for suffix in IMG_EXTENSIONS + VIDEO_EXTENSIONS]) :
 
         filename = file_path.name
-        lat, lon, date = get_jpg_metadata(file_path)
+        suffix = file_path.suffix
+
+        if suffix in IMG_EXTENSIONS :
+            lat, lon, date = get_jpg_metadata(file_path)
+        elif suffix in VIDEO_EXTENSIONS :
+            lat, lon, date = get_mp4_metadata(file_path)
+        
         coords = (lat, lon)
 
         group = None
         for g in groups_data:
-            if photo_is_in_group(date, coords, g):
+            if media_is_in_group(date, coords, g):
                 group = g
                 break
 

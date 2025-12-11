@@ -1,5 +1,5 @@
 import sys
-from photobot.sort import sort_photos
+from photobot.sort import sort_medias
 import subprocess
 import os
 from pathlib import Path
@@ -26,7 +26,7 @@ def main():
             print(f"❌ Dossier {dossier_source} introuvable.")
             sys.exit(1)
 
-        sort_photos(dossier_source, dossier_destination)
+        sort_medias(dossier_source, dossier_destination)
         print("✅ Tri terminé avec succès !")
 
     elif cmd == "--map":
