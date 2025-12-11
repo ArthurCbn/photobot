@@ -65,13 +65,18 @@ def media_is_in_group(
 def sort_medias(
         medias_path: Path, 
         output_path: Path,
+        recursive: bool,
         groups_data_path: Path=GROUP_DATA_PATH
     ) -> None :
 
     with open(groups_data_path, "r", encoding="utf-8") as f :
         groups_data = sort_groups(json.load(f)["groups"])
 
-    all_files = set().union(*[medias_path.glob(f"*{suffix}") for suffix in IMG_EXTENSIONS + VIDEO_EXTENSIONS])
+    if recursive :
+        all_files = set().union(*[medias_path.rglob(f"*{suffix}") for suffix in IMG_EXTENSIONS + VIDEO_EXTENSIONS])
+    else :
+        all_files = set().union(*[medias_path.rglob(f"*{suffix}") for suffix in IMG_EXTENSIONS + VIDEO_EXTENSIONS])
+
     print(f"{len(all_files)} files to sort...")
 
     for i, file_path in enumerate(all_files) :

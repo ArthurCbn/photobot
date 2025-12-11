@@ -20,7 +20,7 @@ from photobot.parameters import (
 
 assert len(sys.argv) > 1
 photos_path = Path(sys.argv[1])
-
+RECURSIVE = "-r" in sys.argv
 
 # region UTILS
 
@@ -39,10 +39,19 @@ def feature_hash(feature: dict) -> str:
 # region LOGIC
 
 @st.cache_data
-def load_photos_videos(medias_path: Path) -> list[dict] :
+def load_photos_videos(
+    medias_path: Path,
+    recursive: bool=RECURSIVE
+) -> list[dict] :
 
     points = []
-    for media_path in set().union(*[medias_path.glob(f"*{suffix}") for suffix in IMG_EXTENSIONS + VIDEO_EXTENSIONS]):
+
+    if recursive :
+        all_files = set().union(*[medias_path.rglob(f"*{suffix}") for suffix in IMG_EXTENSIONS + VIDEO_EXTENSIONS])
+    else :
+        set().union(*[medias_path.glob(f"*{suffix}") for suffix in IMG_EXTENSIONS + VIDEO_EXTENSIONS])
+
+    for media_path in all_files:
         filename = media_path.name
         suffix = media_path.suffix
 

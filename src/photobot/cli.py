@@ -1,47 +1,61 @@
 import sys
-from photobot.sort import sort_medias
 import subprocess
-import os
 from pathlib import Path
-from photobot.parameters import (
-    SRC_PATH,
-)
+import argparse
+from photobot.sort import sort_medias
+from photobot.parameters import SRC_PATH
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="Photobot – tri et cartographie des médias"
+    )
 
-    if len(sys.argv) < 2:
-        print("Usage : photobot --sort <source> <destination> | --map <source>")
-        sys.exit(1)
+    parser.add_argument(
+        "-r",
+        "--recursive",
+        action="store_true",
+        help="Cherche les média récursivement"
+    )
+    
+    # Sous-commandes : --sort et --map
+    subparsers = parser.add_subparsers(dest="command", required=True)
 
-    cmd = sys.argv[1]
+    # --- Sous-commande : sort ---
+    sort_parser = subparsers.add_parser(
+        "sort",
+        help="Trie les médias d’un dossier vers un autre"
+    )
+    sort_parser.add_argument("source", type=Path, help="Dossier source")
+    sort_parser.add_argument("destination", type=Path, help="Dossier destination")
 
-    if cmd == "--sort":
-        if len(sys.argv) < 4:
-            print("❌ Utilisation : photobot --sort <dossier_source> <dossier_destination>")
+    # --- Sous-commande : map ---
+    map_parser = subparsers.add_parser(
+        "map",
+        help="Affiche la carte des médias d’un dossier"
+    )
+    map_parser.add_argument("source", type=Path, help="Dossier source")
+
+    args = parser.parse_args()
+
+    # --- Traitement des commandes ---
+    if args.command == "sort":
+        if not args.source.exists():
+            print(f"❌ Dossier {args.source} introuvable.")
             sys.exit(1)
 
-        dossier_source = Path(sys.argv[2])
-        dossier_destination = Path(sys.argv[3])
-        if not dossier_source.exists():
-            print(f"❌ Dossier {dossier_source} introuvable.")
-            sys.exit(1)
-
-        sort_medias(dossier_source, dossier_destination)
+        sort_medias(args.source, args.destination, recursive=args.recursive)
         print("✅ Tri terminé avec succès !")
 
-    elif cmd == "--map":
-        if len(sys.argv) < 3:
-            print("❌ Utilisation : photobot --map <dossier_source>")
-            sys.exit(1)
-        
-        dossier_source = Path(sys.argv[2])
-        if not dossier_source.exists():
-            print(f"❌ Dossier {dossier_source} introuvable.")
+    elif args.command == "map":
+        if not args.source.exists():
+            print(f"❌ Dossier {args.source} introuvable.")
             sys.exit(1)
 
-        subprocess.run(["streamlit", "run", f"{SRC_PATH / "photobot" / "map.py"}", "--", str(dossier_source)])
-
-    else:
-        print(f"❌ Commande inconnue : {cmd}")
-        print("Options : --sort ou --map")
-        sys.exit(1)
+        subprocess.run([
+            "streamlit",
+            "run",
+            f"{SRC_PATH / 'photobot' / 'map.py'}",
+            "--",
+            str(args.source),
+            "-r" if args.recursive else ""
+        ])
