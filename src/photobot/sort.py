@@ -32,8 +32,14 @@ def media_is_in_group(
     if group["type"] == "date":
 
         # parse toujours la date sans timezone
-        debut = datetime.strptime(group["date_debut"], "%Y-%m-%d")
-        fin = datetime.strptime(group["date_fin"], "%Y-%m-%d")
+        try :
+            debut = datetime.strptime(group["date_debut"], "%Y-%m-%d %H.%M.%S")
+        except :
+            debut = datetime.strptime(group["date_debut"], "%Y-%m-%d")
+        try :
+            fin = datetime.strptime(group["date_fin"], "%Y-%m-%d %H.%M.%S")
+        except :
+            fin = datetime.strptime(group["date_fin"], "%Y-%m-%d")
 
         if media_date is None:
             return False
