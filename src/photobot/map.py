@@ -49,7 +49,7 @@ def load_photos_videos(
     if recursive :
         all_files = set().union(*[medias_path.rglob(f"*{suffix}") for suffix in IMG_EXTENSIONS + VIDEO_EXTENSIONS])
     else :
-        set().union(*[medias_path.glob(f"*{suffix}") for suffix in IMG_EXTENSIONS + VIDEO_EXTENSIONS])
+        all_files = set().union(*[medias_path.glob(f"*{suffix}") for suffix in IMG_EXTENSIONS + VIDEO_EXTENSIONS])
 
     for media_path in all_files:
         filename = media_path.name

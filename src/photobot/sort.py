@@ -75,7 +75,7 @@ def sort_medias(
     if recursive :
         all_files = set().union(*[medias_path.rglob(f"*{suffix}") for suffix in IMG_EXTENSIONS + VIDEO_EXTENSIONS])
     else :
-        all_files = set().union(*[medias_path.rglob(f"*{suffix}") for suffix in IMG_EXTENSIONS + VIDEO_EXTENSIONS])
+        all_files = set().union(*[medias_path.glob(f"*{suffix}") for suffix in IMG_EXTENSIONS + VIDEO_EXTENSIONS])
 
     print(f"{len(all_files)} files to sort...")
 
