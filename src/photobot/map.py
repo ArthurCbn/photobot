@@ -14,7 +14,7 @@ from photobot.utils import (
 from photobot.parameters import (
     IMG_EXTENSIONS,
     VIDEO_EXTENSIONS,
-    GROUP_DATA_PATH,
+    DRAWN_GROUP_DATA_PATH,
 )
 
 
@@ -139,7 +139,7 @@ def export_groups(
         st.warning("⚠️ pas de nouveau groupe...")
         return existing_groups
     
-    with open(GROUP_DATA_PATH, "w", encoding="utf-8") as f:
+    with open(DRAWN_GROUP_DATA_PATH, "w", encoding="utf-8") as f:
         new_existing_groups = existing_groups + new_groups
         json.dump({"groups": new_existing_groups}, f, indent=2)
     
@@ -247,8 +247,7 @@ def groups_sidebar(existing_groups: list[dict]) -> None :
         for g in existing_groups:
             nom = g.get("nom", "Sans nom")
             type_g = g.get("type", "inconnu")
-            if type_g != "date" :
-                st.sidebar.markdown(f"**• {nom}** — _{type_g}_")
+            st.sidebar.markdown(f"**• {nom}** — _{type_g}_")
 
 # endregion
 
@@ -258,8 +257,8 @@ def groups_sidebar(existing_groups: list[dict]) -> None :
 
 # region |---| Init
 
-if GROUP_DATA_PATH.exists():
-    with open(GROUP_DATA_PATH, "r", encoding="utf-8") as f:
+if DRAWN_GROUP_DATA_PATH.exists():
+    with open(DRAWN_GROUP_DATA_PATH, "r", encoding="utf-8") as f:
         data = json.load(f)
         existing_groups = data.get("groups", [])
 else:

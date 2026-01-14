@@ -12,7 +12,8 @@ setup(
         "streamlit>=1.25",
         "streamlit-folium>=0.11",
         "shapely",
-        "PyExifTool"
+        "PyExifTool",
+        "pandas"
     ],
     entry_points={
         "console_scripts": [
