@@ -6,6 +6,7 @@ from shapely.geometry import Point, Polygon
 from shapely.ops import transform
 import exiftool
 import re
+import pandas as pd
 
 
 def parse_date_from_stem(stem: str) -> datetime|None :
@@ -26,6 +27,26 @@ def parse_date_from_stem(stem: str) -> datetime|None :
     
     return date
 
+
+def parse_date_groups(path: Path) -> list[dict] :
+
+    if not path.exists() :
+        return []
+
+    date_groups = pd.read_csv(path)
+    date_groups["type"] = "date"
+    date_groups["date_debut"] = pd.to_datetime(date_groups["date_debut"])
+    date_groups["date_fin"] = pd.to_datetime(date_groups["date_fin"])
+    date_groups["full_day"] = date_groups["full_day"].astype("bool")
+
+    groups_to_normalize = date_groups["full_day"]
+
+    date_groups.loc[groups_to_normalize, "date_debut"] = date_groups.loc[groups_to_normalize, "date_debut"].dt.normalize()
+    date_groups.loc[groups_to_normalize, "date_fin"] = date_groups.loc[groups_to_normalize, "date_fin"].dt.normalize() + pd.Timedelta(days=1)
+
+    date_groups_list = date_groups.to_dict(orient="records")
+
+    return date_groups_list
 
 # region METADATA
 
@@ -175,20 +196,11 @@ def circle_area_km2(rayon_km: float) -> float :
 
 
 def date_duration_days(
-        date1: str,
-        date2: str
+        date1: datetime,
+        date2: datetime
 ) -> float :
 
-    try :
-        d1 = datetime.strptime(date1, "%Y-%m-%d %H.%M.%S")
-    except :
-        d1 = datetime.strptime(date1, "%Y-%m-%d")
-    try :
-        d2 = datetime.strptime(date2, "%Y-%m-%d %H.%M.%S")
-    except :
-        d2 = datetime.strptime(date2, "%Y-%m-%d")
-
-    return (d2 - d1).days
+    return (date2 - date1).days
 
 
 def sort_groups(groups: list[dict]) -> list[dict] :

@@ -6,9 +6,11 @@ from datetime import (
     datetime,
     timezone
 )
+from dateutil.relativedelta import relativedelta
 from pathlib import Path
 from photobot.parameters import (
-    GROUP_DATA_PATH,
+    DRAWN_GROUP_DATA_PATH,
+    DATE_GROUP_DATA_PATH,
     IMG_EXTENSIONS,
     VIDEO_EXTENSIONS
 )
@@ -18,6 +20,7 @@ from photobot.utils import (
     haversine,
     is_in_polygon,
     sort_groups,
+    parse_date_groups,
 )
 
 
@@ -32,14 +35,8 @@ def media_is_in_group(
     if group["type"] == "date":
 
         # parse toujours la date sans timezone
-        try :
-            debut = datetime.strptime(group["date_debut"], "%Y-%m-%d %H.%M.%S")
-        except :
-            debut = datetime.strptime(group["date_debut"], "%Y-%m-%d")
-        try :
-            fin = datetime.strptime(group["date_fin"], "%Y-%m-%d %H.%M.%S")
-        except :
-            fin = datetime.strptime(group["date_fin"], "%Y-%m-%d")
+        debut = group["date_debut"]
+        fin = group["date_fin"]
 
         if media_date is None:
             return False
@@ -72,11 +69,16 @@ def sort_medias(
         medias_path: Path, 
         output_path: Path,
         recursive: bool,
-        groups_data_path: Path=GROUP_DATA_PATH
+        drawn_groups_data_path: Path=DRAWN_GROUP_DATA_PATH,
+        date_groups_data_path: Path=DATE_GROUP_DATA_PATH,
     ) -> None :
 
-    with open(groups_data_path, "r", encoding="utf-8") as f :
-        groups_data = sort_groups(json.load(f)["groups"])
+    with open(drawn_groups_data_path, "r", encoding="utf-8") as f :
+        drawn_groups = json.load(f)["groups"]
+
+    date_groups = parse_date_groups(date_groups_data_path)
+
+    groups_data = sort_groups(drawn_groups + date_groups)
 
     if recursive :
         all_files = set().union(*[medias_path.rglob(f"*{suffix}") for suffix in IMG_EXTENSIONS + VIDEO_EXTENSIONS])

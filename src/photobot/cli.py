@@ -35,6 +35,12 @@ def main():
     )
     map_parser.add_argument("source", type=Path, help="Dossier source")
 
+    # --- Sous-commande : date ---
+    date_parser = subparsers.add_parser(
+        "date",
+        help="Ouvre la liste des groupes par date"
+    )
+
     args = parser.parse_args()
 
     # --- Traitement des commandes ---
@@ -58,4 +64,11 @@ def main():
             "--",
             str(args.source),
             "-r" if args.recursive else ""
+        ])
+    
+    elif args.command == "date" :
+        subprocess.run([
+            "streamlit",
+            "run",
+            f"{SRC_PATH / 'photobot' / 'date.py'}"
         ])

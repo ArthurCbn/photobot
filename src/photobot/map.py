@@ -14,7 +14,7 @@ from photobot.utils import (
 from photobot.parameters import (
     IMG_EXTENSIONS,
     VIDEO_EXTENSIONS,
-    GROUP_DATA_PATH,
+    DRAWN_GROUP_DATA_PATH,
 )
 
 
@@ -100,20 +100,11 @@ def get_min_max_dates(points: list[dict]) -> tuple[datetime, datetime] :
 
 def export_groups(
         drawn_groups: dict,
-        date_groups: list[dict],
         existing_groups: list[dict]
 ) -> list[dict] :
 
     groups = []
-
-    # Date groups
-    for g in date_groups :
-
-        fid = g["id"]
-        name = st.session_state.groups_dict.get(fid, f"Groupe_{fid}")
-        new_group =  g | {"nom": name}
-        groups.append(new_group)
-
+        
     # Map groups
     for feature in ( drawn_groups.get("all_drawings", []) or [] ) :
 
@@ -148,7 +139,7 @@ def export_groups(
         st.warning("⚠️ pas de nouveau groupe...")
         return existing_groups
     
-    with open(GROUP_DATA_PATH, "w", encoding="utf-8") as f:
+    with open(DRAWN_GROUP_DATA_PATH, "w", encoding="utf-8") as f:
         new_existing_groups = existing_groups + new_groups
         json.dump({"groups": new_existing_groups}, f, indent=2)
     
@@ -258,37 +249,6 @@ def groups_sidebar(existing_groups: list[dict]) -> None :
             type_g = g.get("type", "inconnu")
             st.sidebar.markdown(f"**• {nom}** — _{type_g}_")
 
-
-def create_date_group(
-        start_date: datetime, 
-        end_date: datetime,
-        existing_groups: list[dict]
-) -> None :
-    """
-    Crée un groupe de type 'date' dans le fichier groups.json
-    basé sur les dates sélectionnées dans l'interface.
-    """
-    
-    to_hash = f"Dates_{start_date.strftime('%Y%m%d')}_{end_date.strftime('%Y%m%d')}"
-    hash = hashlib.md5(to_hash.encode("utf-8")).hexdigest()
-
-    existing_ids = [g.get("id") for g in existing_groups] + list(st.session_state.groups_dict.keys())
-    if hash in existing_ids :
-        st.warning("⚠️ Ce groupe de dates existe déjà.")
-        return
-    
-
-    new_group = {
-        "nom": None,
-        "id": hash,
-        "type": "date",
-        "date_debut": start_date.strftime("%Y-%m-%d"),
-        "date_fin": end_date.strftime("%Y-%m-%d"),
-    }
-    st.session_state.new_date_groups.append(new_group)
-
-    ask_group_name(hash)
-
 # endregion
 
 
@@ -297,8 +257,8 @@ def create_date_group(
 
 # region |---| Init
 
-if GROUP_DATA_PATH.exists():
-    with open(GROUP_DATA_PATH, "r", encoding="utf-8") as f:
+if DRAWN_GROUP_DATA_PATH.exists():
+    with open(DRAWN_GROUP_DATA_PATH, "r", encoding="utf-8") as f:
         data = json.load(f)
         existing_groups = data.get("groups", [])
 else:
@@ -314,9 +274,6 @@ st.set_page_config(layout="wide")
 if "groups_dict" not in st.session_state:
     st.session_state.groups_dict = {}  # id_feature -> nom
 
-if "new_date_groups" not in st.session_state :
-    st.session_state.new_date_groups = []
-
 # endregion
 
 groups_sidebar(existing_groups=st.session_state.existing_groups)
@@ -325,16 +282,9 @@ points = load_photos_videos(photos_path)
 
 min_date, max_date = get_min_max_dates(points)
 
-col1, col2, col3 = st.columns(3, vertical_alignment="bottom")
+col1, col2= st.columns(2, vertical_alignment="bottom")
 start_date = col1.date_input("📅 Date début", min_value=min_date, max_value=max_date, value=min_date)
 end_date = col2.date_input("📅 Date fin", min_value=min_date, max_value=max_date, value=max_date)
-
-if col3.button("✅ Créer un groupe de date", use_container_width=True) :
-    create_date_group(
-        start_date=start_date,
-        end_date=end_date,
-        existing_groups=st.session_state.existing_groups
-    )
 
 filtered_points = filter_points(
     points=points, 
@@ -348,7 +298,6 @@ map = render_map(
 )
 drawn_groups = st_folium(map, width=1400, height=500, returned_objects=["all_drawings"])
 
-
 if drawn_groups and drawn_groups.get("all_drawings"):
 
     for feature in drawn_groups["all_drawings"] :
@@ -360,7 +309,6 @@ if drawn_groups and drawn_groups.get("all_drawings"):
 if st.button(label="Exporter les groupes") :
     st.session_state.existing_groups = export_groups(
         drawn_groups=drawn_groups,
-        date_groups=st.session_state.new_date_groups,
         existing_groups=st.session_state.existing_groups
     )
     st.rerun()
