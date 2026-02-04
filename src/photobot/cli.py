@@ -4,6 +4,7 @@ from pathlib import Path
 import argparse
 from photobot.sort import sort_medias
 from importlib import resources
+import streamlit.web.bootstrap
 
 def main():
     parser = argparse.ArgumentParser(
@@ -58,20 +59,19 @@ def main():
             sys.exit(1)
 
         with resources.as_file(resources.files("photobot") / "map.py") as app_path:
-            subprocess.run([
-                "streamlit", 
-                "run", 
-                str(app_path),
-                "--",
-                str(args.source),
-                "-r" if args.recursive else ""
-            ])
+            streamlit.web.bootstrap.run(
+                main_script_path=str(app_path), 
+                is_hello=False,
+                args=[str(args.source), "-r" if args.recursive else ""], 
+                flag_options={}
+            )
 
     elif args.command == "date" :
 
         with resources.as_file(resources.files("photobot") / "date.py") as app_path:
-            subprocess.run([
-                "streamlit", 
-                "run",
-                str(app_path), 
-            ])
+            streamlit.web.bootstrap.run(
+                main_script_path=str(app_path),
+                is_hello=False,
+                args=[],
+                flag_options={}
+            )
