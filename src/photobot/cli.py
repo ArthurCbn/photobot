@@ -1,5 +1,4 @@
 import sys
-import subprocess
 from pathlib import Path
 import argparse
 from photobot.sort import sort_medias
