@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "photobot"
+version = "1.0.0"
+description = "Outil CLI pour trier et cartographier des photos par date et lieu"
+authors = [
+    { name = "Arthur Cabon" }
+]
+requires-python = ">=3.8"
+
+dependencies = [
+    "folium",
+    "exifread",
+    "Pillow",
+    "streamlit>=1.25",
+    "streamlit-folium>=0.20",
+    "shapely",
+    "PyExifTool",
+    "pandas",
+    "platformdirs"
+]
+
+[project.scripts]
+photobot = "photobot.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
