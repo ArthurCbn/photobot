@@ -1,12 +1,13 @@
 from pathlib import Path
-import os
+from platformdirs import user_data_dir
 
-SRC_PATH = Path(__file__).absolute().parent.parent
-REPO_PATH = SRC_PATH.parent
-DATA_PATH = REPO_PATH / "data"
+APP_NAME = "photobot"
+APP_AUTHOR = "ArthurCabon"
 
-if not DATA_PATH.exists() :
-    os.makedirs(DATA_PATH, exist_ok=True)
+# region |---| Base directories
+
+DATA_PATH = Path(user_data_dir(APP_NAME, APP_AUTHOR))
+DATA_PATH.mkdir(parents=True, exist_ok=True)
 
 DRAWN_GROUP_DATA_PATH = DATA_PATH / "drawn_groups.json"
 DATE_GROUP_DATA_PATH = DATA_PATH / "date_groups.csv"

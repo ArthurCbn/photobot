@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 import argparse
 from photobot.sort import sort_medias
-from photobot.parameters import SRC_PATH
+from importlib import resources
 
 def main():
     parser = argparse.ArgumentParser(
@@ -57,18 +57,21 @@ def main():
             print(f"❌ Dossier {args.source} introuvable.")
             sys.exit(1)
 
-        subprocess.run([
-            "streamlit",
-            "run",
-            f"{SRC_PATH / 'photobot' / 'map.py'}",
-            "--",
-            str(args.source),
-            "-r" if args.recursive else ""
-        ])
-    
+        with resources.as_file(resources.files("photobot") / "map.py") as app_path:
+            subprocess.run([
+                "streamlit", 
+                "run", 
+                str(app_path),
+                "--",
+                str(args.source),
+                "-r" if args.recursive else ""
+            ])
+
     elif args.command == "date" :
-        subprocess.run([
-            "streamlit",
-            "run",
-            f"{SRC_PATH / 'photobot' / 'date.py'}"
-        ])
+
+        with resources.as_file(resources.files("photobot") / "date.py") as app_path:
+            subprocess.run([
+                "streamlit", 
+                "run",
+                str(app_path), 
+            ])

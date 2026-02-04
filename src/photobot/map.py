@@ -156,7 +156,7 @@ def export_groups(
 def render_map(
     filtered_points: list[dict],
     existing_groups: list[dict]
-) -> None :
+) -> folium.Map :
 
     if len(filtered_points) == 0 :
         return
@@ -296,7 +296,10 @@ map = render_map(
     filtered_points=filtered_points,
     existing_groups=st.session_state.existing_groups
 )
-drawn_groups = st_folium(map, width=1400, height=500, returned_objects=["all_drawings"])
+
+drawn_groups = None
+if map is not None :
+    drawn_groups = st_folium(map, width=1400, height=500, returned_objects=["all_drawings"])
 
 if drawn_groups and drawn_groups.get("all_drawings"):
 
